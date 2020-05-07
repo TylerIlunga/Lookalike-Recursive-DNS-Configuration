@@ -1,0 +1,53 @@
+version: "3"
+
+services:
+  name_server:
+    restart: always
+    image: "name_server"
+    build:
+      context: ./NameServer
+      dockerfile: Dockerfile
+    container_name: "name_server"
+    volumes:
+      - ./NameServer:/opt/NameServer
+    ports:
+      - "56:56/udp"
+  root_server:
+    restart: always
+    image: "root_server"
+    build:
+      context: ./RootServer
+      dockerfile: Dockerfile
+    container_name: "root_server"
+    environment:
+      - NS_DOMAIN=name_server
+    volumes:
+      - ./RootServer:/opt/RootServer
+    ports:
+      - "55:55/udp"
+  recursive_server:
+    restart: always
+    image: "recursive_server"
+    build:
+      context: ./RecursiveServer
+      dockerfile: Dockerfile
+    container_name: "recursive_server"
+    environment:
+      - RS_DOMAIN=root_server
+    volumes:
+      - ./RecursiveServer:/opt/RecursiveServer
+    ports:
+      - "54:54/udp"
+  resolver:
+    restart: always
+    image: "resolver"
+    build:
+      context: ./Resolver
+      dockerfile: Dockerfile
+    container_name: "resolver"
+    environment:
+      - RS_DOMAIN=recursive_server
+    volumes:
+      - ./Resolver:/opt/Resolver
+    ports:
+      - "53:53/udp"
