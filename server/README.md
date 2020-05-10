@@ -55,19 +55,3 @@ Besides the resolver, the additional servers do not run on the same port to avoi
 ## Security and Privacy concerns
 
 Realistically, each server could be running as a process on separate nodes, and without proper replication, failover solutions, and/or security policies/mechanisms, any one of those nodes can serve as a single point of failure, or a threat, in the serial pipeline. For example, let's say the root server is taken offline. That could happen for several reasons. Intercepting the root server's traffic, one can spoof the impending bytes, sent back as a response, such that the given address of a name server, containing the actual IP of the requested domain, points to one of their malicious servers instead. A step towards preventing this can be encrypting traffic between nodes with TLS/SSL. Also, attackers could redirect a huge amount of traffic, using a botnet of infected nodes for example, to the root server so that the recursive server can never obtain the IP for one of the name servers. Using services such as Cloudflare, one can enable great DDOS prevention for a tradeoff of a bill every month. Furthermore, if the attacker can shell into one of the nodes running any of the server processes (Resolver, Recursive Server, Root Server, and/or Name Server) they could modify the written software for whatever malicious intent they have. For example, one could modify the recursive server's logic to never flush the cache so they can send several requests and have the process exceed its memory allocation limits. Also, they could modify the cache such that the domain points to a malicious server governed by the attacker. By having a strong password for your ssh keys, that could be one step towards solving that issue. Also, creating new users with minimal privilege can help one move away from allowing for new sessions to be created with root user privilege.
-
-## AWS (Public Server)
-
-IP: 13.52.235.87
-
-Exposed Port(UDP): 53
-
-Use dig or nslookup to test it out!
-
-Examples
-
-1. dig bing.com @13.52.235.87 +noedns
-
-2. nslookup bing.com 13.52.235.87
-
-_AWS EC2 instance is running the docker daemon and used the docker-compose tool to spin up each service._
