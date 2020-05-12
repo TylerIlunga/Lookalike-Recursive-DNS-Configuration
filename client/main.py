@@ -1,7 +1,7 @@
 # -----------------------------------------------------------
 # Lookalike DNS client
-# 
-# Responsible for buildng, and/or sending, the DNS message 
+#
+# Responsible for buildng, and/or sending, the DNS message
 # query and redirected the response back to the issuer.
 #
 # Examples of valid bytes for queries
@@ -15,7 +15,7 @@
 # 55750120000100000000000103313732033231370231310331373400000100010000291000000000000000 (172.217.11.174)
 # b3a5012000010000000000010331353103313031033132390331343000000100010000291000000000000000 (151.101.129.140)
 # 3ed201200001000000000001023133023333033232390331323900000100010000291000000000000000 (13.33.229.129)
-# 
+#
 # (C) 2020 Tyler Ilunga
 # -----------------------------------------------------------
 
@@ -50,9 +50,6 @@ class Connection:
         return f'{self.ip}:{self.port}'
 
 
-def conclude_program(reason):
-    print(f"Concluding program: {reason}")
-
 def handle_options(sock, args):
     print("handle_options():")
     try:
@@ -61,7 +58,7 @@ def handle_options(sock, args):
         print("Choose a query type:\n\n[0] Standard Query\n[1] Inverse Query")
         query_type = int(sys.stdin.readline().strip())
         if (query_type != 0 and query_type != 1):
-            raise ValueError("INVALID quey type given")
+            raise ValueError("INVALID query type given")
 
         print("Choose DNS message input format[NUM]:\n[0] Bytes\n[1] String")
         input_format = int(sys.stdin.readline().strip())
@@ -72,7 +69,8 @@ def handle_options(sock, args):
 
         handle_dns_message_stdin(sock, conn, query_type)
     except Exception as e:
-        print(f'Failed to connect to {conn.toString()}.\n Error: {e}')
+        print(f'ERROR: Invalid input given.\n {e}')
+        handle_options(sock, args)
 
 
 def handle_dns_message_bytes(sock, conn):
@@ -80,10 +78,9 @@ def handle_dns_message_bytes(sock, conn):
         print("Enter a valid dns message below(bytes):")
         line = sys.stdin.readline().strip()
         if not line:
-            conclude_program("No input given")
-            break
-
-        send_dns_query(sock, conn, line)
+            print("INVALID input: Please enter a value")
+        else:
+            send_dns_query(sock, conn, line)
 
 
 def handle_dns_message_stdin(sock, conn, query_type):
@@ -94,22 +91,25 @@ def handle_dns_message_stdin(sock, conn, query_type):
             print("Enter a domain name[not Top Level Domain!] below:")
             domain = sys.stdin.readline().strip()
             if not domain:
-                conclude_program("Please provide a domain name.")
-                break
-            print("Enter a top level domain below [ex: com]:")
-            tld = sys.stdin.readline().strip()
-            if not tld:
-                conclude_program("Please provide a top level domain (TLD) such as 'com'")
-                break
+                print("Please provide a domain name.")
+            else:
+                print("Enter a top level domain below [ex: com]:")
+                tld = sys.stdin.readline().strip()
+                if not tld:
+                    print(
+                        "Please provide a top level domain (TLD) such as 'com'")
+                else:
+                    send_dns_query(sock, conn, build_dns_query(query_type, (domain, tld), ip))
         else:
             print("Enter the host (IP) address assigned to the target machine below:")
             ip = sys.stdin.readline().strip()
             if (not ip):
-                conclude_program("Please provide the host (IP) address assigned to the target machine.")
-                break
+                print(
+                    "Please provide the host (IP) address assigned to the target machine.")
+            else:
+                send_dns_query(sock, conn, build_dns_query(query_type, (domain, tld), ip))
 
-        send_dns_query(
-            sock, conn, build_dns_query(query_type, (domain, tld), ip))
+        
 
 
 def generate_id():
@@ -123,7 +123,7 @@ def generate_id():
 def build_dns_query(query_type, domain_tld, ip):
     query = ""
     qname_hex = ""
-    EOT = "03" # End of Text
+    EOT = "03"  # End of Text
 
     if query_type == 0:
         qname_hex = str(hexlify(encode(
@@ -175,16 +175,17 @@ def send_dns_query(sock, conn, data):
     # Send data
     print(f'Sending "{data}" to ({conn.toString()})')
     try:
-        sock.settimeout(5) # 5 second request timeout
-        sent = sock.sendto(bytearray.fromhex(data), (conn.getIp(), conn.getPort()))
+        sock.settimeout(5)  # 5 second request timeout
+        sent = sock.sendto(bytearray.fromhex(
+            data), (conn.getIp(), conn.getPort()))
         print("Waiting for response...")
-        rdata, server = sock.recvfrom(4096) # Receive response
+        rdata, server = sock.recvfrom(4096)  # Receive response
         print(f'Response received from {conn.toString()}: {rdata}')
         if len(rdata) == 0:
             raise ValueError("Response received contains no data (bytes)")
     except Exception as error:
-        raise ValueError(f'Raised while attempting to send "{data}" to ({conn.toString()}): {error}')
-    
+        raise ValueError(
+            f'Raised while attempting to send "{data}" to ({conn.toString()}): {error}')
 
 
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
