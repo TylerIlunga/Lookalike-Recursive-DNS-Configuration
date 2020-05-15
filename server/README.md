@@ -1,7 +1,5 @@
 # Lookalike Recursive DNS (server(s))
 
-## Application overview
-
 ## Protocol usage
 
 The protocol issued in the [RFC 1035](https://tools.ietf.org/html/rfc1035) document will be used to construct a proper DNS message.
